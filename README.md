@@ -1,4 +1,3 @@
-[README.md](https://github.com/user-attachments/files/32889714/README.md)
 #🌳 트리 다이어그램 편집기
 
 **트리 다이어그램 제작부터 빈칸 문제 만들기까지**
