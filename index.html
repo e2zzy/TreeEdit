@@ -1,0 +1,400 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>트리 다이어그램 편집기</title><style>
+*{box-sizing:border-box}body{margin:0;font-family:Pretendard,"Noto Sans KR",Arial,sans-serif;background:#f4f6f8;color:#20242a;height:100vh;overflow:hidden}
+header{height:54px;background:#fff;border-bottom:1px solid #dfe3e8;display:flex;align-items:center;padding:0 18px}
+header h1{font-size:18px;margin:0;font-weight:800}header .sub{font-size:11px;color:#7b8490;margin-top:2px}
+.ribbonTabs{height:38px;background:#fff;display:flex;align-items:end;padding:0 14px;border-bottom:1px solid #dfe3e8;gap:2px}
+.tab{height:37px;padding:0 17px;border:0;background:transparent;font-size:12px;font-weight:700;color:#59616b;cursor:pointer;border-bottom:3px solid transparent}
+.tab.active{color:#2563eb;border-bottom-color:#2563eb;background:#f8faff}
+.ribbon{height:78px;background:#fff;border-bottom:1px solid #dfe3e8;display:flex;align-items:stretch;padding:7px 14px;gap:8px;box-shadow:0 2px 4px #00000008}
+.ribbonPanel{display:none;width:100%;align-items:center;gap:8px}.ribbonPanel.active{display:flex}
+.group{display:flex;align-items:center;gap:7px;padding:0 12px;border-right:1px solid #e4e7eb;height:100%}.group:last-child{border-right:0}.groupLabel{font-size:10px;color:#8a929d;align-self:flex-end;margin-left:-8px;margin-bottom:-3px;white-space:nowrap}
+.tool,.btn{border:1px solid #d7dde4;background:#fff;border-radius:7px;padding:7px 10px;font-size:12px;cursor:pointer;color:#303740}.tool:hover,.btn:hover{background:#f3f6f9}.tool.danger{color:#b42318}
+.shapeTool{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:58px;height:56px;font-size:10px;cursor:grab;user-select:none;border:1px solid transparent;border-radius:7px}.shapeTool:hover{background:#f4f7fa;border-color:#dce2e8}
+.circleIcon{width:25px;height:25px;border:2px solid #303740;border-radius:50%;display:block;margin-bottom:3px}.rectIcon{width:31px;height:23px;border:2px solid #303740;display:block;margin-bottom:5px}
+.topSetting{display:flex;align-items:center;gap:5px;font-size:11px;color:#59616b}.topSetting input{width:86px}
+.app{display:flex;height:calc(100vh - 170px)}
+aside{width:250px;background:#fafbfc;border-right:1px solid #dfe3e8;padding:12px;overflow:auto}
+.panel{margin-bottom:12px;border:1px solid #e1e6eb;border-radius:10px;padding:12px;background:#fff}.panel h2{font-size:14px;margin:-12px -12px 11px;padding:10px 12px;background:#f3f5f7;border-bottom:1px solid #e1e6eb;border-radius:10px 10px 0 0;color:#111827}
+.hint{font-size:11px;line-height:1.55;color:#68717d}.row{display:flex;gap:6px}.row>*{flex:1}.control{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;font-size:11px}.control input[type=range]{width:115px}.control input[type=number],.control select{width:105px;padding:5px;border:1px solid #d7dde4;border-radius:6px}
+textarea{width:100%;height:135px;resize:vertical;border:1px solid #ccd3db;border-radius:7px;padding:8px;font-family:Consolas,monospace;font-size:12px;line-height:1.45}
+.canvasWrap{flex:1;padding:14px;min-width:0}.paper{height:100%;background:#fff;border:1px solid #dce1e7;border-radius:9px;position:relative;overflow:hidden;box-shadow:0 1px 3px #0000000c}
+.paper.transparentBg{background-color:#fff;background-image:linear-gradient(45deg,#e4e7eb 25%,transparent 25%),linear-gradient(-45deg,#e4e7eb 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#e4e7eb 75%),linear-gradient(-45deg,transparent 75%,#e4e7eb 75%);background-size:20px 20px;background-position:0 0,0 10px,10px -10px,-10px 0}
+.paper.transparentBg svg{background:transparent}
+.status{position:absolute;right:12px;top:9px;font-size:10px;color:#a0a7b0;z-index:2;pointer-events:none}
+.emptyGuide{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:1}.emptyGuide>div{text-align:center;color:#8a929d;border:1px dashed #ccd3da;border-radius:14px;padding:22px 30px;background:#fbfcfdcc}.emptyGuide b{display:block;font-size:17px;color:#59616b;margin-bottom:8px}.emptyGuide span{font-size:12px;line-height:1.7}
+svg{width:100%;height:100%;position:relative;z-index:2;user-select:none;-webkit-user-select:none;touch-action:none}.node{cursor:move}.node text{pointer-events:none;text-anchor:middle;dominant-baseline:central;font-weight:600;fill:#20242a}.edge{stroke:#4d5661;stroke-width:2;fill:none;cursor:pointer}.edge.selected{stroke:#dc2626;stroke-width:3}.nodeShape{fill:#fff;stroke:#3f4750;stroke-width:2}.node.selected .nodeShape{stroke:#2563eb;stroke-width:3}.node.typing .nodeShape{stroke:#16a34a;stroke-width:3}.multiHandle{fill:#fff;stroke:#2563eb;stroke-width:1.8;pointer-events:none}.edge.groupSelected{stroke:#2563eb;stroke-width:3}
+.handle{fill:#fff;stroke:#2563eb;stroke-width:2;cursor:crosshair}.resizeHandle{fill:#fff;stroke:#2563eb;stroke-width:2;cursor:nwse-resize}.snap{fill:#fff;stroke:#16a34a;stroke-width:3;pointer-events:none}.preview{stroke:#2563eb;stroke-width:2;stroke-dasharray:6 4;pointer-events:none}.selectionBox{fill:#2563eb18;stroke:#2563eb;stroke-width:1.5;stroke-dasharray:6 4;pointer-events:none}.blankHatch{stroke:#777;stroke-width:1.2;pointer-events:none}
+.pop{position:fixed;z-index:20;background:#fff;border:1px solid #d4dae1;border-radius:9px;padding:9px;box-shadow:0 8px 25px #0002;display:none;width:170px}.pop input{width:100%;padding:7px;border:1px solid #ccd3db;border-radius:6px;margin-bottom:6px}.pop button{width:100%;border:0;background:#fff;padding:7px;text-align:left;cursor:pointer;border-radius:5px}.pop button:hover{background:#f3f5f7}
+.sideContext{font-size:11px;color:#68717d;background:#eef4ff;border-radius:7px;padding:7px 8px;margin-bottom:10px;line-height:1.45}
+.helpHead{cursor:pointer;display:flex;align-items:center;justify-content:space-between}.helpChevron{font-size:12px;color:#7b8490;transition:.18s}.helpBody{display:block}.helpPanel.collapsed .helpBody{display:none}.helpPanel.collapsed .helpChevron{transform:rotate(-90deg)}
+.segment{display:inline-flex;border:1px solid #d7dde4;border-radius:7px;overflow:hidden}.segment button{border:0;border-right:1px solid #d7dde4;background:#fff;padding:6px 9px;font-size:11px;cursor:pointer}.segment button:last-child{border-right:0}.segment button.active{background:#eaf2ff;color:#1d4ed8;font-weight:700}
+.problemStep{font-size:11px;font-weight:800;color:#4b5563;margin-right:2px;white-space:nowrap}.viewToggle{display:inline-flex;border:1px solid #cfd6df;border-radius:8px;overflow:hidden}.viewToggle button{border:0;background:#fff;padding:7px 10px;cursor:pointer;font-size:11px;border-right:1px solid #d7dde4}.viewToggle button:last-child{border-right:0}.viewToggle button.active{background:#2563eb;color:#fff;font-weight:800}.viewHint{font-size:10px;color:#6b7280;max-width:180px;line-height:1.35}.modeBadge{position:absolute;left:12px;top:12px;z-index:5;padding:6px 10px;border-radius:999px;font-size:11px;font-weight:800;background:#eaf2ff;color:#1d4ed8;border:1px solid #bfd2ff;pointer-events:none}.modeBadge.answer{background:#ecfdf3;color:#15803d;border-color:#bbf7d0}
+.tool.viewProblemActive{background:#2563eb!important;color:#fff!important;border-color:#2563eb!important;font-weight:800}.tool.viewAnswerActive{background:#16a34a!important;color:#fff!important;border-color:#16a34a!important;font-weight:800}</style></head><body>
+<header><div><h1>트리 다이어그램 편집기</h1><div class="sub">트리 다이어그램 제작부터 빈칸 문제 만들기까지</div></div></header>
+<div class="ribbonTabs">
+<button class="tab active" data-tab="home">홈</button><button class="tab" data-tab="insert">삽입</button><button class="tab" data-tab="tree">트리</button><button class="tab" data-tab="problem">문제 만들기</button><button class="tab" data-tab="design">디자인</button><button class="tab" data-tab="export">내보내기</button>
+</div>
+<div class="ribbon">
+<div class="ribbonPanel active" data-panel="home">
+ <div class="group"><div class="shapeTool homeShape" draggable="true" data-shape="circle"><span class="circleIcon"></span>원</div><div class="shapeTool homeShape" draggable="true" data-shape="rect"><span class="rectIcon"></span>사각형</div><span class="groupLabel">도형</span></div>
+ <div class="group"><button class="tool" id="homeAutoArrange">✨ 자동 정렬</button><label class="topSetting">↔ <input id="homeHGap" type="range" min="60" max="150" value="90"></label><label class="topSetting">↕ <input id="homeVGap" type="range" min="65" max="140" value="90"></label><span class="groupLabel">트리 배치</span></div>
+ <div class="group"><button class="tool" id="homeBlank">◌ 빈칸 지정</button><button class="tool" id="homeProblem">📝 문제 화면</button><button class="tool" id="homeAnswer">✓ 정답 화면</button><span class="groupLabel">문제</span></div>
+ <div class="group"><label class="topSetting">글자 <input id="homeFontSize" type="range" min="12" max="28" value="17"></label><span class="groupLabel">글자</span></div>
+ <div class="group"><button class="tool" id="undoBtn" title="Ctrl+Z">↶ 실행 취소</button><button class="tool" id="redoBtn" title="Ctrl+Y / Ctrl+Shift+Z">↷ 다시 실행</button><span class="groupLabel">되돌리기</span></div><div class="group"><button class="tool danger" id="homeClearAll">🗑 전체 지우기</button><span class="groupLabel">편집</span></div>
+</div>
+<div class="ribbonPanel" data-panel="insert">
+ <div class="group"><div class="shapeTool" id="addCircle" draggable="true" data-shape="circle"><span class="circleIcon"></span>원</div><div class="shapeTool" id="addRect" draggable="true" data-shape="rect"><span class="rectIcon"></span>사각형</div><span class="groupLabel">도형</span></div>
+ <div class="group"><span style="font-size:11px;color:#68717d"><b>도형을 캔버스로 끌어 놓으세요.</b><br>놓은 뒤 도형 가장자리의 연결점을 드래그하면 노드를 연결할 수 있습니다.</span></div>
+</div>
+<div class="ribbonPanel" data-panel="tree">
+ <div class="group"><button class="tool" id="autoArrange">✨ 자동 정렬</button><span class="groupLabel">배치</span></div>
+ <div class="group"><label class="topSetting">↔ 가로 간격 <input id="hGap" type="range" min="60" max="150" value="90"></label><label class="topSetting">↕ 세로 간격 <input id="vGap" type="range" min="65" max="140" value="90"></label><span class="groupLabel">전체 노드 간격</span></div>
+ <div class="group"><span style="font-size:11px;color:#68717d">왼쪽의 <b>입력값으로 트리 만들기</b>에서 값을 입력하면 한 번에 생성할 수 있습니다.</span></div>
+</div>
+<div class="ribbonPanel" data-panel="problem">
+ <div class="group">
+  <span class="problemStep">화면 보기</span>
+  <div class="viewToggle"><button id="problemBtn" class="active">📝 문제 화면</button><button id="answerBtn">✓ 정답 화면</button></div>
+  <span id="viewHint" class="viewHint">빈칸으로 설정한 부분을 문제 형태로 확인합니다.</span>
+  <span class="groupLabel">문제 · 정답 미리보기</span>
+ </div>
+ <div class="group">
+  <span class="problemStep">빈칸 설정</span>
+  <button class="tool" id="blankBtn">◌ 빈칸 지정</button>
+  <button class="tool" id="restoreBtn">↩ 빈칸 취소</button>
+  <span class="groupLabel">선택한 도형</span>
+ </div>
+ <div class="group">
+  <span class="problemStep">빈칸 모양 설정하기</span>
+  <label class="topSetting">표시 모양
+   <select id="blankStyle">
+    <option value="hatch" selected>빗금 처리</option>
+    <option value="empty">내용 숨기기</option>
+    <option value="paren">(　　) 괄호</option>
+   </select>
+  </label>
+  <span class="viewHint" id="blankStyleHint">빈칸으로 설정한 도형이 선택한 빈칸 모양에 따라 표시됩니다.</span>
+  <span class="groupLabel">문제 화면의 빈칸 표시</span>
+ </div>
+</div>
+<div class="ribbonPanel" data-panel="design">
+ <div class="group"><label class="topSetting">글자 크기 <input id="fontSize" type="range" min="12" max="28" value="17"></label><span class="groupLabel">글자</span></div>
+ <div class="group"><span id="sizeSelectionInfo" style="font-size:11px;font-weight:700;color:#2563eb;min-width:48px">선택 없음</span><label class="topSetting">가로 <input id="nodeWidth" type="number" min="30" max="300" step="1" placeholder="-" style="width:65px"></label><label class="topSetting">세로 <input id="nodeHeight" type="number" min="30" max="300" step="1" placeholder="-" style="width:65px"></label><span class="groupLabel">선택 도형 크기</span></div>
+</div>
+<div class="ribbonPanel" data-panel="export">
+ <div class="group">
+  <span style="font-size:11px;font-weight:700;color:#59616b">저장 배경</span>
+  <div class="segment"><button id="exportBgWhite" class="active">⬜ 흰색</button><button id="exportBgTransparent">▦ 투명</button></div>
+  <span class="groupLabel">배경 설정</span>
+ </div>
+ <div class="group">
+  <button class="tool" id="svgBtn">SVG 저장</button>
+  <button class="tool" id="pngBtn">PNG 저장</button>
+  <span class="groupLabel">파일 형식</span>
+ </div>
+</div>
+</div>
+<div class="app">
+<aside>
+ <div class="panel"><h2>입력값으로 트리 만들기</h2>
+  <div class="hint" style="margin-bottom:9px"><b>1)</b> 아래 형식으로 값을 입력하세요.<br><span style="color:#6b7280">자식은 <b>-</b>, 다음 단계는 <b>공백 2칸 + -</b></span><br><br><b>2)</b> 입력 후 버튼을 누르세요.</div>
+  <div style="font-size:11px;font-weight:700;color:#59616b;margin:6px 0">입력 예시</div>
+  <textarea id="treeInput" placeholder="50
+- 30
+  - 20
+  - 40
+- 70
+  - 60
+  - 80"></textarea>
+  <button class="btn" id="makeTree" style="width:100%;margin-top:7px">입력값으로 트리 만들기</button>
+ </div>
+ <div class="panel helpPanel" id="helpPanel">
+ <h2 class="helpHead" id="helpToggle"><span><span style="display:inline-flex;width:19px;height:19px;border-radius:50%;background:#2563eb;color:#fff;align-items:center;justify-content:center;font-size:12px;margin-right:5px">?</span>사용 도움말</span><span class="helpChevron">▼</span></h2>
+ <div class="helpBody">
+  <div class="hint" style="line-height:1.7">
+   <b>도형 추가</b><br><span style="color:#6b7280">상단 <b>삽입</b> 메뉴에서 원·사각형을 캔버스로 끌어와 추가합니다.</span><br><br>
+   <b>트리 배치</b><br><span style="color:#6b7280">상단 <b>트리</b> 메뉴에서 자동 정렬하고 전체 노드의 가로·세로 간격을 조절합니다.</span><br><br>
+   <b>빈칸 문제 만들기</b><br><span style="color:#6b7280">상단 <b>문제 만들기</b> 메뉴에서 선택 노드를 빈칸으로 바꾸고 문제·정답을 확인합니다.</span><br><br>
+   <b>도형·글자 조절</b><br><span style="color:#6b7280">상단 <b>디자인</b> 메뉴에서 도형 크기, 글자 크기, 저장 배경을 설정합니다.</span><br><br>
+   <b>이미지 저장</b><br><span style="color:#6b7280">상단 <b>내보내기</b> 메뉴에서 SVG 또는 PNG로 저장합니다.</span><br><br>
+   <span style="display:block;background:#f3f6f9;border-radius:7px;padding:7px 8px"><b>TIP</b>　노드를 <b>오른쪽 클릭</b>하면 값 수정·빈칸·삭제 메뉴가 열립니다.</span>
+  </div>
+ </div>
+</div>
+</aside>
+<div class="canvasWrap"><div class="paper" id="paper">
+ <div class="status">빈 캔버스 드래그: 여러 개 선택 · Delete: 삭제</div><div class="modeBadge" id="modeBadge">📝 문제 화면</div>
+ <div class="emptyGuide" id="emptyGuide"><div><b>트리를 만들어 보세요</b><span><b style="display:inline;font-size:12px">삽입</b>에서 도형을 끌어오거나<br><b style="display:inline;font-size:12px">입력값으로 트리 만들기</b>로 자동 생성할 수 있습니다.</span></div></div>
+ <svg id="svg" viewBox="0 0 1100 700"></svg>
+</div></div></div>
+<button id="clearAll" type="button" style="display:none" aria-hidden="true"></button><button id="deleteSelected" type="button" style="display:none" aria-hidden="true"></button><div class="pop" id="pop"><input id="editValue" placeholder="노드 값"><button id="applyValue">✏️ 값 수정</button><button id="popBlank">◌ 빈칸으로 만들기</button><button id="popDelete">🗑 노드 삭제</button></div>
+<script>
+document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{
+ document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active",x===t));
+ document.querySelectorAll(".ribbonPanel").forEach(p=>p.classList.toggle("active",p.dataset.panel===t.dataset.tab));
+}));
+
+const NS="http://www.w3.org/2000/svg",svg=document.getElementById("svg"),$=id=>document.getElementById(id);
+let exportTransparent=false;
+let nodes=[],edges=[],uid=1,eid=1,selectedNode=null,selectedNodes=new Set(),selectedEdge=null,dragNode=null,groupDrag=null,resizeNode=null,selectBox=null,connect=null,problem=true,popNode=null,clipboard=null,typingNode=null,typingTimer=null,pointerStart=null,replaceOnType=null;
+function node(id){return nodes.find(n=>n.id===id)}
+function sp(e){
+ let pt=svg.createSVGPoint();pt.x=e.clientX;pt.y=e.clientY;
+ let ctm=svg.getScreenCTM();
+ if(ctm){let q=pt.matrixTransform(ctm.inverse());return{x:q.x,y:q.y}}
+ let r=svg.getBoundingClientRect(),v=svg.viewBox.baseVal;
+ return{x:(e.clientX-r.left)*v.width/r.width,y:(e.clientY-r.top)*v.height/r.height}
+}
+function anchor(n,side){let rx=n.shape==="circle"?(n.w||54)/2:(n.w||68)/2,ry=n.shape==="circle"?(n.h||54)/2:(n.h||46)/2;if(side==="top")return{x:n.x,y:n.y-ry};if(side==="bottom")return{x:n.x,y:n.y+ry};if(side==="left")return{x:n.x-rx,y:n.y};return{x:n.x+rx,y:n.y}}
+function nearestSide(n,p){let sides=["top","right","bottom","left"],best="top",bd=1e9;for(let s of sides){let a=anchor(n,s),d=Math.hypot(a.x-p.x,a.y-p.y);if(d<bd){bd=d;best=s}}return{side:best,point:anchor(n,best),d:bd}}
+function display(n){if(!problem||!n.blank)return n.value;if($("blankStyle").value==="paren")return "(　　)";return ""}
+function lineEnds(e){let a=node(e.from),b=node(e.to);if(!a||!b)return null;let dx=b.x-a.x,dy=b.y-a.y,sa=Math.abs(dx)>Math.abs(dy)?(dx>0?"right":"left"):(dy>0?"bottom":"top"),sb=Math.abs(dx)>Math.abs(dy)?(dx>0?"left":"right"):(dy>0?"top":"bottom");return[anchor(a,sa),anchor(b,sb)]}
+
+
+function selectedIdsForSize(){
+ let ids=[...selectedNodes];
+ if(!ids.length&&selectedNode)ids=[selectedNode];
+ return ids.filter(id=>node(id));
+}
+function syncSizeControls(){
+ let ids=selectedIdsForSize(),w=$("nodeWidth"),h=$("nodeHeight"),info=$("sizeSelectionInfo");
+ if(!ids.length){w.value="";h.value="";w.disabled=h.disabled=true;if(info)info.textContent="선택 없음";return}
+ w.disabled=h.disabled=false;if(info)info.textContent=ids.length===1?"선택 1개":"선택 "+ids.length+"개";
+ let ns=ids.map(id=>node(id));
+ let widths=ns.map(n=>Math.round(n.w||(n.shape==="circle"?54:68)));
+ let heights=ns.map(n=>Math.round(n.h||(n.shape==="circle"?54:46)));
+ w.value=widths.every(v=>v===widths[0])?widths[0]:"";
+ h.value=heights.every(v=>v===heights[0])?heights[0]:"";
+ w.placeholder=ids.length>1&&w.value===""?"혼합":"-";
+ h.placeholder=ids.length>1&&h.value===""?"혼합":"-";
+}
+function applyNumericSize(e){
+ let ids=selectedIdsForSize();if(!ids.length)return;
+ let source=e&&e.target?e.target:null;
+ let wVal=+$("nodeWidth").value,hVal=+$("nodeHeight").value;
+ ids.forEach(id=>{
+   let n=node(id);if(!n)return;
+   if(n.shape==="circle"){
+     let current=n.w||54,d=current;
+     if(source===$("nodeWidth")&&wVal>=30)d=wVal;
+     else if(source===$("nodeHeight")&&hVal>=30)d=hVal;
+     else if(wVal>=30)d=wVal; else if(hVal>=30)d=hVal;
+     n.w=n.h=d;
+   }else{
+     if(source===$("nodeWidth")){if(wVal>=30)n.w=wVal}
+     else if(source===$("nodeHeight")){if(hVal>=30)n.h=hVal}
+     else{if(wVal>=30)n.w=wVal;if(hVal>=30)n.h=hVal}
+   }
+ });
+ render()
+}
+$("nodeWidth").onchange=applyNumericSize;$("nodeHeight").onchange=applyNumericSize;
+function render(){
+ const eg=document.getElementById("emptyGuide");if(eg)eg.style.display=nodes.length?"none":"flex";
+ svg.querySelectorAll("*").forEach(x=>x.remove());
+ for(let e of edges){let pts=lineEnds(e);if(!pts)continue;let l=document.createElementNS(NS,"line");l.setAttribute("x1",pts[0].x);l.setAttribute("y1",pts[0].y);l.setAttribute("x2",pts[1].x);l.setAttribute("y2",pts[1].y);let groupEdge=selectedNodes.size>1&&selectedNodes.has(e.from)&&selectedNodes.has(e.to);
+ l.setAttribute("class","edge"+(selectedEdge===e.id?" selected":"")+(groupEdge?" groupSelected":""));l.onclick=ev=>{ev.stopPropagation();selectedEdge=e.id;selectedNode=null;render()};svg.appendChild(l)}
+ for(let n of nodes){let g=document.createElementNS(NS,"g");g.setAttribute("class","node"+((selectedNode===n.id||selectedNodes.has(n.id))?" selected":"")+(typingNode===n.id?" typing":""));let sh;if(n.shape==="circle"){sh=document.createElementNS(NS,"circle");sh.setAttribute("cx",n.x);sh.setAttribute("cy",n.y);sh.setAttribute("r",(n.w||54)/2)}else{sh=document.createElementNS(NS,"rect");sh.setAttribute("x",n.x-(n.w||68)/2);sh.setAttribute("y",n.y-(n.h||46)/2);sh.setAttribute("width",n.w||68);sh.setAttribute("height",n.h||46);sh.setAttribute("rx",4)}sh.setAttribute("class","nodeShape"+((selectedNode===n.id||selectedNodes.has(n.id))?" selected":"")+(typingNode===n.id?" typing":""));g.appendChild(sh);let t=document.createElementNS(NS,"text");t.setAttribute("x",n.x);t.setAttribute("y",n.y+1);t.setAttribute("font-size",$("fontSize").value);t.textContent=display(n);g.appendChild(t);
+ if(problem&&n.blank&&$("blankStyle").value==="hatch"){
+   let clip=document.createElementNS(NS,"clipPath"),cid="clip"+n.id;clip.setAttribute("id",cid);
+   let cs;if(n.shape==="circle"){cs=document.createElementNS(NS,"circle");cs.setAttribute("cx",n.x);cs.setAttribute("cy",n.y);cs.setAttribute("r",(n.w||54)/2-2)}else{cs=document.createElementNS(NS,"rect");cs.setAttribute("x",n.x-(n.w||68)/2+2);cs.setAttribute("y",n.y-(n.h||46)/2+2);cs.setAttribute("width",(n.w||68)-4);cs.setAttribute("height",(n.h||46)-4)}
+   clip.appendChild(cs);svg.appendChild(clip);
+   let gg=document.createElementNS(NS,"g");gg.setAttribute("clip-path","url(#"+cid+")");
+   let w=n.w||54,h=n.h||54;
+   for(let k=-w;k<=w;k+=8){let ln=document.createElementNS(NS,"line");ln.setAttribute("x1",n.x-w/2+k);ln.setAttribute("y1",n.y+h/2);ln.setAttribute("x2",n.x-w/2+k+h);ln.setAttribute("y2",n.y-h/2);ln.setAttribute("class","blankHatch");gg.appendChild(ln)}
+   g.appendChild(gg)
+ }
+ g.onpointerdown=ev=>{if(ev.target.classList.contains("handle")||ev.target.classList.contains("resizeHandle"))return;ev.stopPropagation();let p=sp(ev);pointerStart={id:n.id,x:p.x,y:p.y,cx:ev.clientX,cy:ev.clientY};
+   if(ev.ctrlKey||ev.metaKey){selectedNode=null;selectedNodes.has(n.id)?selectedNodes.delete(n.id):selectedNodes.add(n.id);selectedEdge=null;render();return}
+   if(selectedNodes.has(n.id)&&selectedNodes.size>1){groupDrag={sx:p.x,sy:p.y,pid:ev.pointerId,orig:[...selectedNodes].map(id=>{let q=node(id);return{id,x:q.x,y:q.y}})}}
+   else{selectedNodes.clear();selectedNode=n.id;replaceOnType=n.id;dragNode={id:n.id,dx:n.x-p.x,dy:n.y-p.y,pid:ev.pointerId}}
+   selectedEdge=null;svg.setPointerCapture(ev.pointerId);render()};
+ g.oncontextmenu=ev=>{ev.preventDefault();ev.stopPropagation();selectedNodes.clear();selectedNode=n.id;selectedEdge=null;replaceOnType=null;render();showPop(n,ev.clientX+8,ev.clientY+8)};
+ svg.appendChild(g);
+ if(selectedNodes.has(n.id)){
+   let nw=n.w||(n.shape==="circle"?54:68),nh=n.h||(n.shape==="circle"?54:46);
+   [[n.x-nw/2,n.y-nh/2],[n.x+nw/2,n.y-nh/2],[n.x-nw/2,n.y+nh/2],[n.x+nw/2,n.y+nh/2]].forEach(([hx,hy])=>{
+     let mh=document.createElementNS(NS,"rect");mh.setAttribute("x",hx-3.5);mh.setAttribute("y",hy-3.5);mh.setAttribute("width",7);mh.setAttribute("height",7);mh.setAttribute("class","multiHandle");svg.appendChild(mh)
+   });
+ };
+ if(selectedNode===n.id&&selectedNodes.size===0){
+ for(let side of ["top","right","bottom","left"]){let a=anchor(n,side),h=document.createElementNS(NS,"circle");h.setAttribute("cx",a.x);h.setAttribute("cy",a.y);h.setAttribute("r",6);h.setAttribute("class","handle");h.onpointerdown=ev=>{ev.stopPropagation();ev.preventDefault();let p=sp(ev);connect={from:n.id,side,x:p.x,y:p.y,target:null,targetSide:null,pid:ev.pointerId};svg.setPointerCapture(ev.pointerId);startPreview(a,p)};svg.appendChild(h)}
+ let rh=document.createElementNS(NS,"rect"),a=anchor(n,"right"),b=anchor(n,"bottom");rh.setAttribute("x",a.x-5);rh.setAttribute("y",b.y-5);rh.setAttribute("width",10);rh.setAttribute("height",10);rh.setAttribute("class","resizeHandle");rh.onpointerdown=ev=>{ev.stopPropagation();ev.preventDefault();let p=sp(ev);resizeNode={id:n.id,sx:p.x,sy:p.y,w:n.w||(n.shape==="circle"?54:68),h:n.h||(n.shape==="circle"?54:46),pid:ev.pointerId};svg.setPointerCapture(ev.pointerId)};svg.appendChild(rh)
+}}
+syncSizeControls();
+if(selectBox){let r=document.createElementNS(NS,"rect");r.setAttribute("x",Math.min(selectBox.x1,selectBox.x2));r.setAttribute("y",Math.min(selectBox.y1,selectBox.y2));r.setAttribute("width",Math.abs(selectBox.x2-selectBox.x1));r.setAttribute("height",Math.abs(selectBox.y2-selectBox.y1));r.setAttribute("class","selectionBox");svg.appendChild(r)}
+}
+let undoStack=[],redoStack=[],historyLock=false,lastHistoryJSON="";
+function snapshotState(){
+ return JSON.stringify({nodes:nodes,edges:edges,uid:uid,eid:eid,problem:problem,blankStyle:$("blankStyle")?$("blankStyle").value:"hatch",fontSize:$("fontSize")?$("fontSize").value:"17"});
+}
+function restoreState(raw){
+ let st=JSON.parse(raw);historyLock=true;
+ nodes=st.nodes||[];edges=st.edges||[];uid=st.uid||1;eid=st.eid||1;problem=st.problem!==false;
+ selectedNode=null;selectedEdge=null;selectedNodes=new Set();dragNode=null;groupDrag=null;resizeNode=null;selectBox=null;connect=null;typingNode=null;replaceOnType=null;
+ if($("blankStyle")&&st.blankStyle)$("blankStyle").value=st.blankStyle;
+ if($("fontSize")&&st.fontSize)$("fontSize").value=st.fontSize;
+ historyLock=false;setViewMode(problem);syncSizeControls();lastHistoryJSON=snapshotState();updateHistoryButtons();
+}
+function pushHistory(force=false){
+ if(historyLock)return;
+ let now=snapshotState();
+ if(!lastHistoryJSON){lastHistoryJSON=now;updateHistoryButtons();return}
+ if(force||now!==lastHistoryJSON){undoStack.push(lastHistoryJSON);if(undoStack.length>100)undoStack.shift();redoStack=[];lastHistoryJSON=now;updateHistoryButtons()}
+}
+function undo(){
+ if(!undoStack.length)return;let current=snapshotState(),prev=undoStack.pop();redoStack.push(current);restoreState(prev)
+}
+function redo(){
+ if(!redoStack.length)return;let current=snapshotState(),next=redoStack.pop();undoStack.push(current);restoreState(next)
+}
+function updateHistoryButtons(){
+ let u=$("undoBtn"),r=$("redoBtn");if(u)u.disabled=!undoStack.length;if(r)r.disabled=!redoStack.length;
+}
+let preview=null,snap=null;
+function startPreview(a,p){preview=document.createElementNS(NS,"line");preview.setAttribute("class","preview");preview.setAttribute("x1",a.x);preview.setAttribute("y1",a.y);preview.setAttribute("x2",p.x);preview.setAttribute("y2",p.y);svg.appendChild(preview)}
+function updatePreview(p){
+ if(!connect||!preview)return;preview.setAttribute("x2",p.x);preview.setAttribute("y2",p.y);
+ let best=null,bd=55,bside=null,bpoint=null;
+ for(let n of nodes){if(n.id===connect.from)continue;let q=nearestSide(n,p);if(q.d<bd){best=n;bd=q.d;bside=q.side;bpoint=q.point}}
+ connect.target=best?.id||null;connect.targetSide=bside;
+ if(snap)snap.remove();snap=null;if(best){snap=document.createElementNS(NS,"circle");snap.setAttribute("cx",bpoint.x);snap.setAttribute("cy",bpoint.y);snap.setAttribute("r",9);snap.setAttribute("class","snap");svg.appendChild(snap);preview.setAttribute("x2",bpoint.x);preview.setAttribute("y2",bpoint.y)}
+}
+svg.onpointermove=e=>{let p=sp(e);
+ if(resizeNode){let n=node(resizeNode.id),dx=p.x-resizeNode.sx,dy=p.y-resizeNode.sy;if(n.shape==="circle"){let d=Math.max(dx,dy);n.w=n.h=Math.max(34,resizeNode.w+d*2)}else{n.w=Math.max(42,resizeNode.w+dx*2);n.h=Math.max(30,resizeNode.h+dy*2)}render();return}
+ if(selectBox){selectBox.x2=p.x;selectBox.y2=p.y;render();return}
+ if(groupDrag){let dx=p.x-groupDrag.sx,dy=p.y-groupDrag.sy;for(let o of groupDrag.orig){let n=node(o.id);if(n){n.x=o.x+dx;n.y=o.y+dy}}render();return}
+ if(dragNode){let n=node(dragNode.id);n.x=Math.max(40,p.x+dragNode.dx);n.y=Math.max(40,p.y+dragNode.dy);render();return}
+ if(connect)updatePreview(p)};
+svg.onpointerdown=e=>{if(e.target===svg){let p=sp(e);selectedNode=null;selectedEdge=null;selectedNodes.clear();replaceOnType=null;selectBox={x1:p.x,y1:p.y,x2:p.x,y2:p.y,pid:e.pointerId};svg.setPointerCapture(e.pointerId);render()}};
+svg.onpointerup=e=>{
+ if(resizeNode){resizeNode=null;return}
+ if(selectBox){
+ let x1=Math.min(selectBox.x1,selectBox.x2),x2=Math.max(selectBox.x1,selectBox.x2),y1=Math.min(selectBox.y1,selectBox.y2),y2=Math.max(selectBox.y1,selectBox.y2);
+ selectedNodes.clear();
+ let dragW=x2-x1,dragH=y2-y1;
+ if(dragW>3||dragH>3){
+   nodes.forEach(n=>{
+     let nw=n.w||(n.shape==="circle"?54:68),nh=n.h||(n.shape==="circle"?54:46);
+     let nx1=n.x-nw/2,nx2=n.x+nw/2,ny1=n.y-nh/2,ny2=n.y+nh/2;
+     if(nx2>=x1&&nx1<=x2&&ny2>=y1&&ny1<=y2)selectedNodes.add(n.id)
+   });
+ }
+ selectBox=null;try{svg.releasePointerCapture(e.pointerId)}catch(_){}render();return
+}
+ if(groupDrag){groupDrag=null;return}
+ if(dragNode){dragNode=null;return}
+ if(connect){let from=connect.from,to=connect.target;connect=null;if(preview)preview.remove();if(snap)snap.remove();preview=snap=null;if(to&&from!==to&&!edges.some(x=>(x.from===from&&x.to===to)||(x.from===to&&x.to===from)))edges.push({id:eid++,from,to});render()}};
+
+svg.addEventListener("contextmenu",e=>{if(e.target===svg){e.preventDefault();$("pop").style.display="none"}});
+function addNode(shape,x=null,y=null,edit=true){let count=nodes.length,n={id:uid++,shape,value:"",w:shape==="circle"?54:68,h:shape==="circle"?54:46,x:x??(180+(count%6)*100),y:y??(110+Math.floor(count/6)*90),blank:false};nodes.push(n);selectedNodes.clear();selectedNode=n.id;render();if(edit)setTimeout(()=>showPop(n,Math.min(innerWidth-185,svg.getBoundingClientRect().left+n.x),Math.min(innerHeight-190,svg.getBoundingClientRect().top+n.y)),0);return n}
+["addCircle","addRect"].forEach(id=>{let el=$(id);el.addEventListener("dragstart",e=>{e.dataTransfer.setData("application/x-tree-shape",el.dataset.shape);e.dataTransfer.effectAllowed="copy"})});
+$("paper").addEventListener("dragover",e=>{if(e.dataTransfer.types.includes("application/x-tree-shape")){e.preventDefault();e.dataTransfer.dropEffect="copy"}});
+$("paper").addEventListener("drop",e=>{let shape=e.dataTransfer.getData("application/x-tree-shape");if(!shape)return;e.preventDefault();let p=sp(e);addNode(shape,p.x,p.y,false)});
+function showPop(n,x,y){popNode=n;$("editValue").value=n.value;$("pop").style.left=x+"px";$("pop").style.top=y+"px";$("pop").style.display="block";$("editValue").focus()}
+document.body.addEventListener("click",()=>$("pop").style.display="none");$("pop").onclick=e=>e.stopPropagation();$("applyValue").onclick=()=>{if(popNode){popNode.value=$("editValue").value;$("pop").style.display="none";render()}};$("editValue").onkeydown=e=>{if(e.key==="Enter")$("applyValue").click()};
+function deleteNode(id){nodes=nodes.filter(n=>n.id!==id);edges=edges.filter(e=>e.from!==id&&e.to!==id);if(selectedNode===id)selectedNode=null;render()}
+$("popDelete").onclick=()=>{if(popNode)deleteNode(popNode.id);$("pop").style.display="none"};$("popBlank").onclick=()=>{if(popNode)popNode.blank=true;$("pop").style.display="none";setViewMode(true);pushHistory()};
+$("blankBtn").onclick=()=>{let ids=selectedNodes.size?[...selectedNodes]:(selectedNode?[selectedNode]:[]);ids.forEach(id=>{let n=node(id);if(n)n.blank=true});setViewMode(true);pushHistory()};$("restoreBtn").onclick=()=>{let ids=selectedNodes.size?[...selectedNodes]:(selectedNode?[selectedNode]:[]);ids.forEach(id=>{let n=node(id);if(n)n.blank=false});render();pushHistory()};
+$("deleteSelected").onclick=()=>{if(selectedEdge){edges=edges.filter(e=>e.id!==selectedEdge);selectedEdge=null;render();return}let ids=selectedNodes.size?[...selectedNodes]:(selectedNode?[selectedNode]:[]);if(ids.length){nodes=nodes.filter(n=>!ids.includes(n.id));edges=edges.filter(e=>!ids.includes(e.from)&&!ids.includes(e.to));selectedNodes.clear();selectedNode=null;render()}};
+{let u=$("undoBtn"),r=$("redoBtn");if(u)u.onclick=undo;if(r)r.onclick=redo}
+document.addEventListener("keydown",e=>{
+ if((e.ctrlKey||e.metaKey)&&!e.altKey){
+   let k=e.key.toLowerCase();
+   if(k==="z"){e.preventDefault();if(e.shiftKey)redo();else undo();return}
+   if(k==="y"){e.preventDefault();redo();return}
+ }
+
+ let tag=document.activeElement.tagName;if(["INPUT","TEXTAREA"].includes(tag))return;
+ if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="c"){e.preventDefault();let ids=selectedNodes.size?[...selectedNodes]:(selectedNode?[selectedNode]:[]);if(!ids.length)return;let set=new Set(ids);clipboard={nodes:ids.map(id=>({...node(id)})),edges:edges.filter(x=>set.has(x.from)&&set.has(x.to)).map(x=>({...x}))};return}
+ if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="v"){e.preventDefault();if(!clipboard)return;let map=new Map(),copies=[];for(let o of clipboard.nodes){let n={...o,id:uid++,x:o.x+28,y:o.y+28};map.set(o.id,n.id);nodes.push(n);copies.push(n.id)}for(let o of clipboard.edges)edges.push({id:eid++,from:map.get(o.from),to:map.get(o.to)});selectedNode=null;selectedEdge=null;selectedNodes=new Set(copies);clipboard={nodes:copies.map(id=>({...node(id)})),edges:edges.filter(x=>copies.includes(x.from)&&copies.includes(x.to)).map(x=>({...x}))};render();return}
+ let targetId=selectedNode||(selectedNodes.size===1?[...selectedNodes][0]:null);
+ if(targetId && !e.ctrlKey && !e.metaKey && !e.altKey){
+   let n=node(targetId);
+   if(e.key==="Backspace"){e.preventDefault();if(replaceOnType===targetId){n.value="";replaceOnType=null}else n.value=(n.value||"").slice(0,-1);typingNode=targetId;clearTimeout(typingTimer);typingTimer=setTimeout(()=>{typingNode=null;render()},700);render();return}
+   if(e.key.length===1){e.preventDefault();if(replaceOnType===targetId){n.value=e.key;replaceOnType=null}else n.value=(n.value||"")+e.key;typingNode=targetId;clearTimeout(typingTimer);typingTimer=setTimeout(()=>{typingNode=null;render()},700);render();return}
+ }
+ if(e.key==="Delete")$("deleteSelected").click()
+});
+function clearAllDiagram(){
+ nodes=[];
+ edges=[];
+ uid=1;eid=1;
+ selectedNode=null;selectedEdge=null;selectedNodes=new Set();
+ dragNode=null;groupDrag=null;resizeNode=null;selectBox=null;connect=null;
+ clipboard=null;typingNode=null;replaceOnType=null;pointerStart=null;popNode=null;
+ let ti=$("treeInput");if(ti)ti.value="";
+ let pop=$("pop");if(pop)pop.style.display="none";
+ if(typeof preview!=="undefined"&&preview){preview.remove();preview=null}
+ if(typeof snap!=="undefined"&&snap){snap.remove();snap=null}
+ render();pushHistory();
+}
+{let el=$("clearAll");if(el)el.addEventListener("click",clearAllDiagram);}
+function setViewMode(isProblem){
+ problem=isProblem;
+ let pb=$("problemBtn"),ab=$("answerBtn"),hp=$("homeProblem"),ha=$("homeAnswer"),badge=$("modeBadge"),hint=$("viewHint");
+ if(pb)pb.classList.toggle("active",isProblem);if(ab)ab.classList.toggle("active",!isProblem);
+ if(hp){hp.classList.toggle("viewProblemActive",isProblem);hp.setAttribute("aria-pressed",isProblem?"true":"false")}
+ if(ha){ha.classList.toggle("viewAnswerActive",!isProblem);ha.setAttribute("aria-pressed",!isProblem?"true":"false")}
+ if(badge){badge.classList.toggle("answer",!isProblem);badge.textContent=isProblem?"📝 문제 화면":"✓ 정답 화면"}
+ if(hint){
+   hint.textContent=isProblem?"빈칸으로 설정한 부분을 문제 형태로 확인합니다.":"빈칸의 원래 내용을 정답 형태로 확인합니다.";
+ }
+ render()
+}
+$("problemBtn").onclick=()=>setViewMode(true);$("answerBtn").onclick=()=>setViewMode(false);$("blankStyle").onchange=()=>{setViewMode(problem);pushHistory()};$("fontSize").oninput=render;
+function parseTree(){
+ nodes=[];edges=[];uid=1;eid=1;let lines=$("treeInput").value.split(/\n/).filter(x=>x.trim()),stack=[];
+ for(let raw of lines){let lead=(raw.match(/^\s*/)||[""])[0].replace(/\t/g,"  ").length,lev=Math.floor(lead/2),val=raw.trim().replace(/^[-•]\s*/,""),n={id:uid++,shape:"circle",value:val,w:54,h:54,x:0,y:0,blank:false};nodes.push(n);if(stack.length){let parent=raw.trim().startsWith("-")?(stack[lev]||stack[0]):stack[0];if(parent)edges.push({id:eid++,from:parent.id,to:n.id})}stack[lev+1]=n;if(!raw.trim().startsWith("-"))stack[0]=n}autoArrange()}
+$("makeTree").onclick=()=>{parseTree();pushHistory()};
+document.addEventListener("pointerup",()=>setTimeout(()=>pushHistory(),0));
+
+function autoArrange(){
+ if(!nodes.length)return;let inc=new Map(nodes.map(n=>[n.id,0])),adj=new Map(nodes.map(n=>[n.id,[]]));for(let e of edges){inc.set(e.to,(inc.get(e.to)||0)+1);adj.get(e.from)?.push(e.to)}
+ let roots=nodes.filter(n=>(inc.get(n.id)||0)===0);if(!roots.length)roots=[nodes[0]];let hg=+$("hGap").value,vg=+$("vGap").value,next=75,seen=new Set();
+ function rec(id,d,path){if(path.has(id)||seen.has(id))return;let n=node(id),np=new Set(path);np.add(id);seen.add(id);let kids=(adj.get(id)||[]).filter(k=>!np.has(k));kids.sort((a,b)=>node(a).x-node(b).x);if(!kids.length){n.x=next;next+=hg}else{kids.forEach(k=>rec(k,d+1,np));let xs=kids.map(k=>node(k).x);n.x=(Math.min(...xs)+Math.max(...xs))/2}n.y=80+d*vg}
+ roots.sort((a,b)=>a.x-b.x).forEach(r=>{rec(r.id,0,new Set());next+=hg/2});nodes.filter(n=>!seen.has(n.id)).forEach(n=>{n.x=next;n.y=80;next+=hg});render()
+}
+$("autoArrange").onclick=autoArrange;
+function cleanClone(){let c=svg.cloneNode(true);c.querySelectorAll(".handle,.resizeHandle,.multiHandle,.snap,.preview,.selectionBox").forEach(x=>x.remove());c.querySelectorAll(".selected").forEach(x=>x.classList.remove("selected"));if(!exportTransparent){let bg=document.createElementNS(NS,"rect");bg.setAttribute("x","0");bg.setAttribute("y","0");bg.setAttribute("width","1100");bg.setAttribute("height","700");bg.setAttribute("fill","#fff");c.insertBefore(bg,c.firstChild)}return c}
+function svgText(){let c=cleanClone(),style=document.createElementNS(NS,"style");style.textContent=".edge{stroke:#222;stroke-width:1.7}.nodeShape{fill:white;stroke:#111;stroke-width:1.8}.node text{text-anchor:middle;dominant-baseline:middle;font-family:Arial,sans-serif;font-weight:600}";c.insertBefore(style,c.firstChild);return new XMLSerializer().serializeToString(c)}
+$("svgBtn").onclick=()=>{let b=new Blob([svgText()],{type:"image/svg+xml"}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="tree.svg";a.click();URL.revokeObjectURL(a.href)};
+$("pngBtn").onclick=()=>{let blob=new Blob([svgText()],{type:"image/svg+xml"}),url=URL.createObjectURL(blob),im=new Image();im.onload=()=>{let c=document.createElement("canvas");c.width=1100*2;c.height=700*2;let ctx=c.getContext("2d");ctx.scale(2,2);if(!exportTransparent){ctx.fillStyle="white";ctx.fillRect(0,0,1100,700)}ctx.drawImage(im,0,0);URL.revokeObjectURL(url);c.toBlob(b=>{let a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="tree.png";a.click();URL.revokeObjectURL(a.href)},"image/png")};im.src=url};
+
+$("hGap").addEventListener("input",()=>{if(nodes.length)autoArrange()});
+$("vGap").addEventListener("input",()=>{if(nodes.length)autoArrange()});
+
+function setExportBackground(transparent){
+ exportTransparent=transparent;
+ let paper=$("paper");if(paper)paper.classList.toggle("transparentBg",transparent);
+ [["exportBgWhite",!transparent],["exportBgTransparent",transparent]].forEach(([id,on])=>{let el=$(id);if(el)el.classList.toggle("active",on)});
+}
+{let el=$("exportBgWhite");if(el)el.onclick=()=>setExportBackground(false)}
+{let el=$("exportBgTransparent");if(el)el.onclick=()=>setExportBackground(true)}
+setExportBackground(false);
+
+{let ht=$("helpToggle"),hp=$("helpPanel");if(ht&&hp)ht.onclick=()=>hp.classList.toggle("collapsed");}
+
+$("homeAutoArrange").onclick=()=>autoArrange();
+$("homeBlank").onclick=()=>$("blankBtn").click();
+$("homeProblem").onclick=()=>setViewMode(true);
+$("homeAnswer").onclick=()=>setViewMode(false);
+{let el=$("homeClearAll");if(el)el.addEventListener("click",e=>{e.preventDefault();clearAllDiagram();});}
+
+function syncHomeControls(){
+ $("homeHGap").value=$("hGap").value;$("homeVGap").value=$("vGap").value;$("homeFontSize").value=$("fontSize").value;
+}
+$("homeHGap").oninput=e=>{$("hGap").value=e.target.value;if(nodes.length)autoArrange()};
+$("homeVGap").oninput=e=>{$("vGap").value=e.target.value;if(nodes.length)autoArrange()};
+$("homeFontSize").oninput=e=>{$("fontSize").value=e.target.value;$("fontSize").dispatchEvent(new Event("input"))};
+$("hGap").addEventListener("input",syncHomeControls);$("vGap").addEventListener("input",syncHomeControls);$("fontSize").addEventListener("input",syncHomeControls);
+syncHomeControls();
+
+document.querySelectorAll(".homeShape").forEach(el=>{
+ el.addEventListener("dragstart",e=>{e.dataTransfer.setData("application/x-tree-shape",el.dataset.shape);e.dataTransfer.effectAllowed="copy"});
+});
+setViewMode(true);
+
+
+lastHistoryJSON=snapshotState();updateHistoryButtons();
+</script></body></html>
